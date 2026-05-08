@@ -3,7 +3,7 @@ import { useGetList, useCreate, useUpdate, useNotify } from "ra-core";
 import { Clock, LogIn, LogOut, CheckCircle2, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { Attendance, Employee } from "../types";
+import type { Attendance } from "../types";
 
 const TODAY = new Date().toISOString().slice(0, 10);
 

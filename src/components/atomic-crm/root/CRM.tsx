@@ -15,32 +15,38 @@ import { ForgotPasswordPage } from "@/components/supabase/forgot-password-page";
 import { SetPasswordPage } from "@/components/supabase/set-password-page";
 import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
 
-import companies from "../companies";
-import contacts from "../contacts";
-import { Dashboard } from "../dashboard/Dashboard";
-import { RoleSwitchDashboard } from "../dashboard/RoleSwitchDashboard";
-import { MobileDashboard } from "../dashboard/MobileDashboard";
-import deals from "../deals";
+// ── Civilezy resources ────────────────────────────────────────────────────────
 import students from "../students";
 import employees from "../employees";
 import attendance from "../attendance";
 import leaves from "../leaves";
 import dailyTasks from "../daily-tasks";
+import sales from "../sales";
+
+// ── Dashboards ────────────────────────────────────────────────────────────────
+import { RoleSwitchDashboard } from "../dashboard/RoleSwitchDashboard";
 import { HRDashboard } from "../hr-dashboard/HRDashboard";
-import { Layout } from "../layout/Layout";
+
+// ── Layouts ───────────────────────────────────────────────────────────────────
+import { CivilezyLayout } from "../layout/CivilezyLayout";
+import { AdminRoute } from "../layout/AdminRoute";
 import { MobileLayout } from "../layout/MobileLayout";
+
+// ── Pages ─────────────────────────────────────────────────────────────────────
 import { SignupPage } from "../login/SignupPage";
 import { ConfirmationRequired } from "../login/ConfirmationRequired";
-import { ImportPage } from "../misc/ImportPage";
 import { ChangelogPage } from "../misc/ChangelogPage";
+import { ProfilePage } from "../settings/ProfilePage";
+import { SettingsPage } from "../settings/SettingsPage";
+import { SettingsPageMobile } from "../settings/SettingsPageMobile";
+import { StartPage } from "../login/StartPage.tsx";
+
+// ── Providers ─────────────────────────────────────────────────────────────────
 import {
   getAuthProvider as defaultAuthProviderBuilder,
   getDataProvider as defaultDataProviderBuilder,
 } from "../providers/supabase";
-import sales from "../sales";
-import { SettingsPageMobile } from "../settings/SettingsPageMobile";
-import { ProfilePage } from "../settings/ProfilePage";
-import { SettingsPage } from "../settings/SettingsPage";
+import { i18nProvider as defaulti18nProvider } from "../providers/commons/i18nProvider";
 import {
   CONFIGURATION_STORE_KEY,
   type ConfigurationContextValue,
@@ -58,14 +64,7 @@ import {
   defaultTaskTypes,
   defaultTitle,
 } from "./defaultConfiguration";
-import { i18nProvider as defaulti18nProvider } from "../providers/commons/i18nProvider";
-import { StartPage } from "../login/StartPage.tsx";
 import { useIsMobile } from "@/hooks/use-mobile.ts";
-import { MobileTasksList } from "../tasks/MobileTasksList.tsx";
-import { ContactListMobile } from "../contacts/ContactList.tsx";
-import { ContactShow } from "../contacts/ContactShow.tsx";
-import { CompanyShow } from "../companies/CompanyShow.tsx";
-import { NoteShowPage } from "../notes/NoteShowPage.tsx";
 
 const defaultStore = localStorageStore(undefined, "CRM");
 
@@ -79,46 +78,6 @@ export type CRMProps = {
   layout?: LayoutComponent;
 } & Partial<ConfigurationContextValue>;
 
-/**
- * CRM Component
- *
- * This component sets up and renders the main CRM application using `ra-core`. It provides
- * default configurations and themes but allows for customization through props. The component
- * seeds the store with any custom prop values for backwards compatibility.
- *
- * @param {LabeledValue[]} companySectors - The list of company sectors used in the application.
- * @param {string} currency - The ISO 4217 currency code used to format monetary values (e.g. "USD", "EUR", "GBP").
- * @param {RaThemeOptions} darkTheme - The theme to use when the application is in dark mode.
- * @param {LabeledValue[]} dealCategories - The categories of deals used in the application.
- * @param {string[]} dealPipelineStatuses - The statuses of deals in the pipeline used in the application.
- * @param {DealStage[]} dealStages - The stages of deals used in the application.
- * @param {RaThemeOptions} lightTheme - The theme to use when the application is in light mode.
- * @param {string} logo - The logo used in the CRM application.
- * @param {NoteStatus[]} noteStatuses - The statuses of notes used in the application.
- * @param {LabeledValue[]} taskTypes - The types of tasks used in the application.
- * @param {string} title - The title of the CRM application.
- *
- * @returns {JSX.Element} The rendered CRM application.
- *
- * @example
- * // Basic usage of the CRM component
- * import { CRM } from '@/components/atomic-crm/dashboard/CRM';
- *
- * const App = () => (
- *     <CRM
- *         logo="/path/to/logo.png"
- *         title="My Custom CRM"
- *         lightTheme={{
- *             ...defaultTheme,
- *             palette: {
- *                 primary: { main: '#0000ff' },
- *             },
- *         }}
- *     />
- * );
- *
- * export default App;
- */
 export const CRM = ({
   companySectors = defaultCompanySectors,
   currency = defaultCurrency,
@@ -137,25 +96,10 @@ export const CRM = ({
   googleWorkplaceDomain = import.meta.env.VITE_GOOGLE_WORKPLACE_DOMAIN,
   disableEmailPasswordAuthentication = import.meta.env
     .VITE_DISABLE_EMAIL_PASSWORD_AUTHENTICATION === "true",
-  disableTelemetry,
+  disableTelemetry: _disableTelemetry,
   ...rest
 }: CRMProps) => {
-  useEffect(() => {
-    if (
-      disableTelemetry ||
-      process.env.NODE_ENV !== "production" ||
-      typeof window === "undefined" ||
-      typeof window.location === "undefined" ||
-      typeof Image === "undefined"
-    ) {
-      return;
-    }
-    const img = new Image();
-    img.src = `https://atomic-crm-telemetry.marmelab.com/atomic-crm-telemetry?domain=${window.location.hostname}`;
-  }, [disableTelemetry]);
-
-  // Seed the store with CRM prop values if not already stored
-  // (backwards compatibility for prop-based config)
+  // Seed the store with configuration values on first load
   useEffect(() => {
     if (!store.getItem(CONFIGURATION_STORE_KEY)) {
       store.setItem(CONFIGURATION_STORE_KEY, {
@@ -176,10 +120,7 @@ export const CRM = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store]);
 
-  const isMobile = useIsMobile();
-
-  // on login, pre-fetch the configuration to avoid a flickering
-  // when accessing the app for the first time
+  // Pre-fetch configuration after login to avoid first-render flicker
   const wrappedAuthProvider = useMemo<AuthProvider>(
     () => ({
       ...authProvider,
@@ -191,15 +132,13 @@ export const CRM = ({
             store.setItem(CONFIGURATION_STORE_KEY, config);
           }
         } catch {
-          // Non-critical: config will load via useConfigurationLoader
+          // Non-critical
         }
         return result;
       },
       handleCallback: async (params: any) => {
         if (!authProvider.handleCallback) {
-          throw new Error(
-            "handleCallback is not implemented in the authProvider",
-          );
+          throw new Error("handleCallback is not implemented in the authProvider");
         }
         const result = await authProvider.handleCallback(params);
         try {
@@ -208,7 +147,7 @@ export const CRM = ({
             store.setItem(CONFIGURATION_STORE_KEY, config);
           }
         } catch {
-          // Non-critical: config will load via useConfigurationLoader
+          // Non-critical
         }
         return result;
       },
@@ -224,6 +163,7 @@ export const CRM = ({
     [authProvider, dataProvider, store],
   );
 
+  const isMobile = useIsMobile();
   const ResponsiveAdmin = isMobile ? MobileAdmin : DesktopAdmin;
 
   return (
@@ -240,56 +180,56 @@ export const CRM = ({
   );
 };
 
+// ── Desktop ───────────────────────────────────────────────────────────────────
+
 const DesktopAdmin = (
   props: CoreAdminProps & {
     dashboard?: DashboardComponent;
     layout?: LayoutComponent;
   },
-) => {
-  return (
-    <Admin
-      layout={props.layout ?? Layout}
-      dashboard={props.dashboard ?? RoleSwitchDashboard}
-      {...props}
-    >
-      <CustomRoutes noLayout>
-        <Route path={SignupPage.path} element={<SignupPage />} />
-        <Route
-          path={ConfirmationRequired.path}
-          element={<ConfirmationRequired />}
-        />
-        <Route path={SetPasswordPage.path} element={<SetPasswordPage />} />
-        <Route
-          path={ForgotPasswordPage.path}
-          element={<ForgotPasswordPage />}
-        />
-        <Route path={OAuthConsentPage.path} element={<OAuthConsentPage />} />
-      </CustomRoutes>
+) => (
+  <Admin
+    layout={props.layout ?? CivilezyLayout}
+    dashboard={props.dashboard ?? RoleSwitchDashboard}
+    {...props}
+  >
+    {/* Auth pages — no layout wrapper */}
+    <CustomRoutes noLayout>
+      <Route path={SignupPage.path} element={<SignupPage />} />
+      <Route path={ConfirmationRequired.path} element={<ConfirmationRequired />} />
+      <Route path={SetPasswordPage.path} element={<SetPasswordPage />} />
+      <Route path={ForgotPasswordPage.path} element={<ForgotPasswordPage />} />
+      <Route path={OAuthConsentPage.path} element={<OAuthConsentPage />} />
+    </CustomRoutes>
 
-      <CustomRoutes>
-        <Route path={ProfilePage.path} element={<ProfilePage />} />
-        <Route path={SettingsPage.path} element={<SettingsPage />} />
-        <Route path={ImportPage.path} element={<ImportPage />} />
-        <Route path={ChangelogPage.path} element={<ChangelogPage />} />
-        <Route path="/hr-dashboard" element={<HRDashboard />} />
-      </CustomRoutes>
-      <Resource name="deals" {...deals} />
-      <Resource name="contacts" {...contacts} />
-      <Resource name="companies" {...companies} />
-      <Resource name="contact_notes" />
-      <Resource name="deal_notes" />
-      <Resource name="tasks" />
-      <Resource name="sales" {...sales} />
-      <Resource name="tags" />
-      {/* Civilezy EMS Resources */}
-      <Resource name="students" {...students} />
-      <Resource name="employees" {...employees} />
-      <Resource name="attendance" {...attendance} />
-      <Resource name="leaves" {...leaves} />
-      <Resource name="daily_tasks" {...dailyTasks} />
-    </Admin>
-  );
-};
+    {/* App pages — wrapped in CivilezyLayout */}
+    <CustomRoutes>
+      <Route path={ProfilePage.path} element={<ProfilePage />} />
+      <Route path={SettingsPage.path} element={<SettingsPage />} />
+      <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+      {/* Admin-only pages are guarded at the component level */}
+      <Route
+        path="/hr-dashboard"
+        element={<AdminRoute element={<HRDashboard />} />}
+      />
+    </CustomRoutes>
+
+    {/* ── Civilezy resources ─────────────────────────────────────────────── */}
+    {/* CRM — admin only (canAccess blocks employees) */}
+    <Resource name="students" {...students} />
+
+    {/* EMS — all authenticated users (RLS + canAccess scopes to own data) */}
+    <Resource name="employees" {...employees} />
+    <Resource name="attendance" {...attendance} />
+    <Resource name="leaves" {...leaves} />
+    <Resource name="daily_tasks" {...dailyTasks} />
+
+    {/* Platform admin — user management */}
+    <Resource name="sales" {...sales} />
+  </Admin>
+);
+
+// ── Mobile ────────────────────────────────────────────────────────────────────
 
 const MobileAdmin = (
   props: CoreAdminProps & {
@@ -299,13 +239,8 @@ const MobileAdmin = (
 ) => {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: {
-        gcTime: 1000 * 60 * 60 * 24, // 24 hours
-        networkMode: "offlineFirst",
-      },
-      mutations: {
-        networkMode: "offlineFirst",
-      },
+      queries: { gcTime: 1000 * 60 * 60 * 24, networkMode: "offlineFirst" },
+      mutations: { networkMode: "offlineFirst" },
     },
   });
   const asyncStoragePersister = createAsyncStoragePersister({
@@ -320,39 +255,28 @@ const MobileAdmin = (
       <Admin
         queryClient={queryClient}
         layout={props.layout ?? MobileLayout}
-        dashboard={props.dashboard ?? MobileDashboard}
+        dashboard={props.dashboard ?? RoleSwitchDashboard}
         {...props}
       >
         <CustomRoutes noLayout>
           <Route path={SignupPage.path} element={<SignupPage />} />
-          <Route
-            path={ConfirmationRequired.path}
-            element={<ConfirmationRequired />}
-          />
+          <Route path={ConfirmationRequired.path} element={<ConfirmationRequired />} />
           <Route path={SetPasswordPage.path} element={<SetPasswordPage />} />
-          <Route
-            path={ForgotPasswordPage.path}
-            element={<ForgotPasswordPage />}
-          />
+          <Route path={ForgotPasswordPage.path} element={<ForgotPasswordPage />} />
           <Route path={OAuthConsentPage.path} element={<OAuthConsentPage />} />
         </CustomRoutes>
         <CustomRoutes>
-          <Route
-            path={SettingsPageMobile.path}
-            element={<SettingsPageMobile />}
-          />
+          <Route path={SettingsPageMobile.path} element={<SettingsPageMobile />} />
           <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+          <Route path={ProfilePage.path} element={<ProfilePage />} />
         </CustomRoutes>
-        <Resource
-          name="contacts"
-          list={ContactListMobile}
-          show={ContactShow}
-          recordRepresentation={contacts.recordRepresentation}
-        >
-          <Route path=":id/notes/:noteId" element={<NoteShowPage />} />
-        </Resource>
-        <Resource name="companies" show={CompanyShow} />
-        <Resource name="tasks" list={MobileTasksList} />
+
+        <Resource name="students" {...students} />
+        <Resource name="employees" {...employees} />
+        <Resource name="attendance" {...attendance} />
+        <Resource name="leaves" {...leaves} />
+        <Resource name="daily_tasks" {...dailyTasks} />
+        <Resource name="sales" {...sales} />
       </Admin>
     </PersistQueryClientProvider>
   );

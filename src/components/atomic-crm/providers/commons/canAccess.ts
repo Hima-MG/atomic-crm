@@ -45,8 +45,10 @@ export const canAccess = <
   ];
   if (adminOnly.includes(resource)) return false;
 
-  // ── Employees list/directory — read-only ───────────────────────────────────
-  // Non-admin employees can see the directory but cannot create/edit/delete
+  // ── Employees — employees can only read their own record ──────────────────
+  // list is allowed so that ReferenceInput/PunchCard can resolve the current
+  // employee record (RLS limits results to the user's own row). The directory
+  // page itself is not linked from the employee nav so it is effectively hidden.
   if (resource === "employees") {
     return action === "list" || action === "show";
   }

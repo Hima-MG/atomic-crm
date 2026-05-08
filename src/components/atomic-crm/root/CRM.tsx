@@ -26,7 +26,6 @@ import attendance from "../attendance";
 import leaves from "../leaves";
 import dailyTasks from "../daily-tasks";
 import { HRDashboard } from "../hr-dashboard/HRDashboard";
-import { AdminRequired } from "../hr-dashboard/AdminRequired";
 import { Layout } from "../layout/Layout";
 import { MobileLayout } from "../layout/MobileLayout";
 import { SignupPage } from "../login/SignupPage";
@@ -271,14 +270,7 @@ const DesktopAdmin = (
         <Route path={SettingsPage.path} element={<SettingsPage />} />
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
-        <Route
-          path="/hr-dashboard"
-          element={
-            <AdminRequired>
-              <HRDashboard />
-            </AdminRequired>
-          }
-        />
+        <Route path="/hr-dashboard" element={<HRDashboard />} />
       </CustomRoutes>
       <Resource name="deals" {...deals} />
       <Resource name="contacts" {...contacts} />

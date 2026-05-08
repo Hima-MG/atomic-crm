@@ -12,7 +12,12 @@ import {
   ChevronDown,
   Building2,
 } from "lucide-react";
-import { CanAccess, useTranslate, useUserMenu } from "ra-core";
+import {
+  CanAccess,
+  useGetIdentity,
+  useTranslate,
+  useUserMenu,
+} from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { ThemeModeToggle } from "@/components/admin/theme-mode-toggle";
@@ -33,6 +38,8 @@ const Header = () => {
   const { title } = useConfigurationContext();
   const location = useLocation();
   const translate = useTranslate();
+  const { identity } = useGetIdentity();
+  const isAdmin = identity?.administrator === true;
 
   let currentPath: string | boolean = "/";
   if (matchPath("/", location.pathname)) {
@@ -46,7 +53,7 @@ const Header = () => {
     matchPath("/daily_tasks/*", location.pathname) ||
     matchPath("/hr-dashboard", location.pathname)
   ) {
-    currentPath = "/hr";
+    currentPath = isAdmin ? "/hr" : location.pathname.split("/")[1];
   } else {
     currentPath = false;
   }
@@ -73,17 +80,43 @@ const Header = () => {
                   to="/"
                   isActive={currentPath === "/"}
                 />
-                {/* Student Leads — admin only */}
-                <CanAccess resource="students" action="list">
-                  <NavigationTab
-                    label="Student Leads"
-                    to="/students"
-                    isActive={currentPath === "/students"}
-                    icon={<GraduationCap className="h-4 w-4" />}
-                  />
-                </CanAccess>
-                {/* HR & EMS — shown to all, contents filtered per role */}
-                <HRNavigationDropdown isActive={currentPath === "/hr"} />
+
+                {isAdmin ? (
+                  // Admin nav
+                  <>
+                    <CanAccess resource="students" action="list">
+                      <NavigationTab
+                        label="Student Leads"
+                        to="/students"
+                        isActive={currentPath === "/students"}
+                        icon={<GraduationCap className="h-4 w-4" />}
+                      />
+                    </CanAccess>
+                    <HRAdminDropdown isActive={currentPath === "/hr"} />
+                  </>
+                ) : (
+                  // Employee nav — flat tabs, no dropdown
+                  <>
+                    <NavigationTab
+                      label="Attendance"
+                      to="/attendance"
+                      isActive={currentPath === "attendance"}
+                      icon={<CalendarCheck className="h-4 w-4" />}
+                    />
+                    <NavigationTab
+                      label="Leave"
+                      to="/leaves"
+                      isActive={currentPath === "leaves"}
+                      icon={<CalendarClock className="h-4 w-4" />}
+                    />
+                    <NavigationTab
+                      label="Daily Tasks"
+                      to="/daily_tasks"
+                      isActive={currentPath === "daily_tasks"}
+                      icon={<ClipboardList className="h-4 w-4" />}
+                    />
+                  </>
+                )}
               </nav>
             </div>
 
@@ -133,25 +166,14 @@ const NavigationTab = ({
   </Link>
 );
 
-const HR_NAV_ITEMS = [
-  {
-    label: "HR Dashboard",
-    to: "/hr-dashboard",
-    icon: LayoutDashboard,
-    group: "overview",
-  },
-  { label: "Employees", to: "/employees", icon: UserCog, group: "hr" },
-  { label: "Attendance", to: "/attendance", icon: CalendarCheck, group: "hr" },
-  { label: "Leave Requests", to: "/leaves", icon: CalendarClock, group: "hr" },
-  {
-    label: "Daily Tasks",
-    to: "/daily_tasks",
-    icon: ClipboardList,
-    group: "hr",
-  },
+const HR_ADMIN_ITEMS = [
+  { label: "Employees", to: "/employees", icon: UserCog },
+  { label: "Attendance", to: "/attendance", icon: CalendarCheck },
+  { label: "Leave Requests", to: "/leaves", icon: CalendarClock },
+  { label: "Daily Tasks", to: "/daily_tasks", icon: ClipboardList },
 ];
 
-const HRNavigationDropdown = ({ isActive }: { isActive: boolean }) => (
+const HRAdminDropdown = ({ isActive }: { isActive: boolean }) => (
   <DropdownMenu>
     <DropdownMenuTrigger
       className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 outline-none ${
@@ -164,31 +186,27 @@ const HRNavigationDropdown = ({ isActive }: { isActive: boolean }) => (
       <ChevronDown className="h-3.5 w-3.5" />
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start" className="w-52">
-      <CanAccess resource="configuration" action="edit">
-        <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
-          Overview
-        </DropdownMenuLabel>
-        <DropdownMenuItem asChild>
-          <Link to="/hr-dashboard" className="flex items-center gap-2">
-            <LayoutDashboard className="h-4 w-4" />
-            HR Dashboard
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-      </CanAccess>
+      <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
+        Overview
+      </DropdownMenuLabel>
+      <DropdownMenuItem asChild>
+        <Link to="/hr-dashboard" className="flex items-center gap-2">
+          <LayoutDashboard className="h-4 w-4" />
+          HR Dashboard
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
       <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
         Management
       </DropdownMenuLabel>
-      {HR_NAV_ITEMS.filter((i) => i.group === "hr").map(
-        ({ label, to, icon: Icon }) => (
-          <DropdownMenuItem key={to} asChild>
-            <Link to={to} className="flex items-center gap-2">
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          </DropdownMenuItem>
-        ),
-      )}
+      {HR_ADMIN_ITEMS.map(({ label, to, icon: Icon }) => (
+        <DropdownMenuItem key={to} asChild>
+          <Link to={to} className="flex items-center gap-2">
+            <Icon className="h-4 w-4" />
+            {label}
+          </Link>
+        </DropdownMenuItem>
+      ))}
     </DropdownMenuContent>
   </DropdownMenu>
 );

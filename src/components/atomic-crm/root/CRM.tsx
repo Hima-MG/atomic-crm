@@ -18,6 +18,7 @@ import { OAuthConsentPage } from "@/components/supabase/oauth-consent-page";
 import companies from "../companies";
 import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
+import { RoleSwitchDashboard } from "../dashboard/RoleSwitchDashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
 import students from "../students";
@@ -248,7 +249,7 @@ const DesktopAdmin = (
   return (
     <Admin
       layout={props.layout ?? Layout}
-      dashboard={props.dashboard ?? Dashboard}
+      dashboard={props.dashboard ?? RoleSwitchDashboard}
       {...props}
     >
       <CustomRoutes noLayout>

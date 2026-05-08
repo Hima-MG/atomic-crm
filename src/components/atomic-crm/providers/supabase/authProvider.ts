@@ -13,10 +13,14 @@ const getBaseAuthProvider = () =>
         throw new Error();
       }
 
+      const { data: sessionData } = await getSupabaseClient().auth.getSession();
+
       return {
         id: sale.id,
         fullName: `${sale.first_name} ${sale.last_name}`,
         avatar: sale.avatar?.src,
+        administrator: sale.administrator ?? false,
+        email: sessionData?.session?.user?.email ?? sale.email ?? "",
       };
     },
   });

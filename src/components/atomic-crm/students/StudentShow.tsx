@@ -2,7 +2,6 @@ import { ShowBase, useShowContext } from "ra-core";
 import { EditButton } from "@/components/admin/edit-button";
 import { DeleteButton } from "@/components/admin/delete-button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { Student } from "../types";
 import {
   STAGE_CHOICES,

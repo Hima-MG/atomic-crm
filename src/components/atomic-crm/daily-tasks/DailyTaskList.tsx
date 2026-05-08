@@ -36,7 +36,6 @@ const StatusBadge = (_props: { label?: string | boolean }) => {
 
 const TruncatedField = ({
   source,
-  label,
   maxLen = 50,
 }: {
   source: keyof DailyTask;

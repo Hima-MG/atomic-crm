@@ -1,7 +1,7 @@
 import { Draggable } from "@hello-pangea/dnd";
 import { useRedirect } from "ra-core";
 import { Card, CardContent } from "@/components/ui/card";
-import { Phone, Mail, Calendar } from "lucide-react";
+import { Phone, Calendar } from "lucide-react";
 import type { Student } from "../types";
 
 export const StudentKanbanCard = ({

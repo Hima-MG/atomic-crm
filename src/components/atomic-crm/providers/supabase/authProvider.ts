@@ -143,6 +143,18 @@ export const getAuthProvider = (): AuthProvider => {
 
       return baseAuthProvider.checkAuth(params);
     },
+    // 403 means "authenticated but not authorized" — it must never log the user out.
+    // ra-supabase-core's default checkError rejects on 403, which causes ra-core to
+    // redirect to login. We override it to only reject on genuine auth failures (401).
+    checkError: async (error) => {
+      if (
+        error?.status === 401 ||
+        (error?.status === 400 && error?.name === "AuthSessionMissingError")
+      ) {
+        return Promise.reject();
+      }
+      return Promise.resolve();
+    },
     canAccess: async (params) => {
       const isInitialized = await getIsInitialized();
       if (!isInitialized) return false;

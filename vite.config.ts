@@ -57,7 +57,9 @@ export default defineConfig({
     keepNames: true,
   },
   build: {
-    sourcemap: true,
+    // Source maps expose full source code to anyone with DevTools.
+    // Keep false in production; enable locally via VITE_SOURCEMAP=true if needed.
+    sourcemap: process.env.VITE_SOURCEMAP === "true",
   },
   resolve: {
     preserveSymlinks: true,

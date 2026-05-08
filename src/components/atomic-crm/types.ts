@@ -226,3 +226,97 @@ export interface ContactGender {
   label: string;
   icon: ComponentType<{ className?: string }>;
 }
+
+// ============================================================
+// Civilezy EMS Types
+// ============================================================
+
+export type StudentStage =
+  | "new-lead"
+  | "contacted"
+  | "interested"
+  | "follow-up"
+  | "joined"
+  | "closed";
+
+export type Student = {
+  full_name: string;
+  phone?: string;
+  email?: string;
+  qualification?: string; // ITI | Diploma | BTech | Surveyor
+  interested_course?: string;
+  lead_source?: string;
+  counselor_id?: Identifier | null;
+  follow_up_date?: string | null;
+  stage: StudentStage;
+  notes?: string;
+  index: number;
+  created_at: string;
+  updated_at: string;
+} & Pick<RaRecord, "id">;
+
+export type EmployeeStatus = "active" | "inactive";
+export type EmployeeDepartment =
+  | "Management"
+  | "HR"
+  | "IT Team"
+  | "Digital Marketing Team"
+  | "Content Creator Team"
+  | "Accounts";
+
+export type Employee = {
+  name: string;
+  department: EmployeeDepartment;
+  role?: string;
+  phone?: string;
+  email?: string;
+  joining_date?: string;
+  salary?: number;
+  status: EmployeeStatus;
+  created_at: string;
+  updated_at: string;
+} & Pick<RaRecord, "id">;
+
+export type AttendanceStatus = "present" | "absent" | "half-day" | "leave";
+
+export type Attendance = {
+  employee_id: Identifier;
+  date: string;
+  check_in?: string;
+  check_out?: string;
+  working_hours?: number;
+  status: AttendanceStatus;
+  created_at: string;
+} & Pick<RaRecord, "id">;
+
+export type LeaveType = "annual" | "sick" | "casual" | "other";
+export type LeaveStatus = "pending" | "approved" | "rejected";
+
+export type Leave = {
+  employee_id: Identifier;
+  leave_type: LeaveType;
+  reason?: string;
+  start_date: string;
+  end_date: string;
+  status: LeaveStatus;
+  admin_notes?: string;
+  created_at: string;
+  updated_at: string;
+} & Pick<RaRecord, "id">;
+
+export type DailyTaskStatus = "pending" | "under-review" | "completed";
+
+export type DailyTask = {
+  employee_id: Identifier;
+  category: string;
+  task_title: string;
+  description?: string;
+  start_time?: string;
+  end_time?: string;
+  total_time?: number;
+  submission_date: string;
+  status: DailyTaskStatus;
+  admin_notes?: string;
+  created_at: string;
+  updated_at: string;
+} & Pick<RaRecord, "id">;

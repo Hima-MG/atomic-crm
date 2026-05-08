@@ -7,25 +7,77 @@ type CanAccessParams<
   record?: RecordType;
 };
 
+/**
+ * Role-based access control for Civilezy CRM.
+ *
+ * Roles:
+ *   "admin"  — Santhosh, Dr. Anjana, Jasmine, Hima
+ *              Full access to everything.
+ *
+ *   "user"   — All other employees
+ *              Can only manage their own attendance, leave requests,
+ *              and daily task submissions. Cannot access the CRM,
+ *              other employees' sensitive data, or any admin tools.
+ */
 export const canAccess = <
   RecordType extends Record<string, any> = Record<string, any>,
 >(
   role: string,
   params: CanAccessParams<RecordType>,
-) => {
-  if (role === "admin") {
-    return true;
+): boolean => {
+  // Admins have unrestricted access
+  if (role === "admin") return true;
+
+  const { resource, action } = params;
+
+  // ── Completely blocked for non-admins ──────────────────────────────────────
+  // CRM (student leads) and legacy CRM resources — employee-facing only
+  const adminOnly = [
+    "students",
+    "contacts",
+    "companies",
+    "contact_notes",
+    "deal_notes",
+    "deals",
+    "tags",
+    "sales",
+    "configuration",
+  ];
+  if (adminOnly.includes(resource)) return false;
+
+  // ── Employees list/directory — read-only ───────────────────────────────────
+  // Non-admin employees can see the directory but cannot create/edit/delete
+  if (resource === "employees") {
+    return action === "list" || action === "show";
   }
 
-  // Non admins can't access the sales resource
-  if (params.resource === "sales") {
-    return false;
+  // ── Attendance — submit own records, no delete ─────────────────────────────
+  if (resource === "attendance") {
+    return (
+      action === "list" ||
+      action === "show" ||
+      action === "create" ||
+      action === "edit"
+    );
   }
 
-  // Non admins can't access the configuration resource
-  if (params.resource === "configuration") {
-    return false;
+  // ── Leaves — submit only, admin approves ──────────────────────────────────
+  // Employees can submit (create) and view history (list/show).
+  // Status changes (approve/reject) happen on edit — admin only.
+  if (resource === "leaves") {
+    return action === "list" || action === "show" || action === "create";
   }
 
-  return true;
+  // ── Daily tasks — submit and update own entries, no delete ─────────────────
+  if (resource === "daily_tasks") {
+    return (
+      action === "list" ||
+      action === "show" ||
+      action === "create" ||
+      action === "edit"
+    );
+  }
+
+  // Default deny for everything else
+  return false;
 };

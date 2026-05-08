@@ -20,6 +20,13 @@ import contacts from "../contacts";
 import { Dashboard } from "../dashboard/Dashboard";
 import { MobileDashboard } from "../dashboard/MobileDashboard";
 import deals from "../deals";
+import students from "../students";
+import employees from "../employees";
+import attendance from "../attendance";
+import leaves from "../leaves";
+import dailyTasks from "../daily-tasks";
+import { HRDashboard } from "../hr-dashboard/HRDashboard";
+import { AdminRequired } from "../hr-dashboard/AdminRequired";
 import { Layout } from "../layout/Layout";
 import { MobileLayout } from "../layout/MobileLayout";
 import { SignupPage } from "../login/SignupPage";
@@ -264,6 +271,14 @@ const DesktopAdmin = (
         <Route path={SettingsPage.path} element={<SettingsPage />} />
         <Route path={ImportPage.path} element={<ImportPage />} />
         <Route path={ChangelogPage.path} element={<ChangelogPage />} />
+        <Route
+          path="/hr-dashboard"
+          element={
+            <AdminRequired>
+              <HRDashboard />
+            </AdminRequired>
+          }
+        />
       </CustomRoutes>
       <Resource name="deals" {...deals} />
       <Resource name="contacts" {...contacts} />
@@ -273,6 +288,12 @@ const DesktopAdmin = (
       <Resource name="tasks" />
       <Resource name="sales" {...sales} />
       <Resource name="tags" />
+      {/* Civilezy EMS Resources */}
+      <Resource name="students" {...students} />
+      <Resource name="employees" {...employees} />
+      <Resource name="attendance" {...attendance} />
+      <Resource name="leaves" {...leaves} />
+      <Resource name="daily_tasks" {...dailyTasks} />
     </Admin>
   );
 };

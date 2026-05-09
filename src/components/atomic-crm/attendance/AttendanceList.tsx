@@ -1,4 +1,4 @@
-import { useRecordContext } from "ra-core";
+import { useGetIdentity, useRecordContext } from "ra-core";
 import { CreateButton } from "@/components/admin/create-button";
 import { DataTable } from "@/components/admin/data-table";
 import { ExportButton } from "@/components/admin/export-button";
@@ -11,8 +11,10 @@ import { ReferenceInput } from "@/components/admin/reference-input";
 import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TopToolbar } from "../layout/TopToolbar";
 import { ATTENDANCE_STATUS_CHOICES } from "./AttendanceInputs";
+import { EmployeeAttendanceView } from "./EmployeeAttendanceView";
 import type { Attendance } from "../types";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -41,7 +43,6 @@ const WorkingHoursField = (_props: { label?: string | boolean }) => {
   return <span>{record.working_hours}h</span>;
 };
 
-// Computed once at module load — stable reference, no per-render cost
 const TODAY = new Date().toISOString().slice(0, 10);
 
 const filters = [
@@ -68,7 +69,7 @@ const AttendanceActions = () => (
   </TopToolbar>
 );
 
-export const AttendanceList = () => (
+const AdminAttendanceList = () => (
   <List
     filters={filters}
     filterDefaultValues={{ date: TODAY }}
@@ -100,3 +101,25 @@ export const AttendanceList = () => (
     </DataTable>
   </List>
 );
+
+// ── Role-aware entry point ─────────────────────────────────────────────────────
+
+export const AttendanceList = () => {
+  const { identity, isPending } = useGetIdentity();
+
+  if (isPending) {
+    return (
+      <div className="max-w-lg mx-auto mt-6 space-y-4">
+        <Skeleton className="h-56 w-full rounded-2xl" />
+        <Skeleton className="h-12 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  // Admins see the full data table; employees see the punch workspace
+  if (identity?.administrator === true) {
+    return <AdminAttendanceList />;
+  }
+
+  return <EmployeeAttendanceView />;
+};

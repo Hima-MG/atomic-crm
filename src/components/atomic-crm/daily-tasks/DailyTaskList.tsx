@@ -1,4 +1,4 @@
-import { useRecordContext } from "ra-core";
+import { useGetIdentity, useRecordContext } from "ra-core";
 import { CreateButton } from "@/components/admin/create-button";
 import { DataTable } from "@/components/admin/data-table";
 import { ExportButton } from "@/components/admin/export-button";
@@ -12,9 +12,13 @@ import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { SearchInput } from "@/components/admin/search-input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TopToolbar } from "../layout/TopToolbar";
 import { TASK_CATEGORY_CHOICES, TASK_STATUS_CHOICES } from "./DailyTaskInputs";
+import { EmployeeTaskView } from "./EmployeeTaskView";
 import type { DailyTask } from "../types";
+
+// ── Admin table helpers ────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
   pending:
@@ -108,7 +112,7 @@ const DailyTaskActions = () => (
   </TopToolbar>
 );
 
-export const DailyTaskList = () => (
+const AdminDailyTaskList = () => (
   <List
     filters={filters}
     filterDefaultValues={{ submission_date: TODAY }}
@@ -148,3 +152,31 @@ export const DailyTaskList = () => (
     </DataTable>
   </List>
 );
+
+// ── Role-aware entry point ─────────────────────────────────────────────────────
+
+export const DailyTaskList = () => {
+  const { identity, isPending } = useGetIdentity();
+
+  if (isPending) {
+    return (
+      <div className="max-w-lg mx-auto mt-4 space-y-4">
+        <Skeleton className="h-14 w-full rounded-xl" />
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-xl" />
+          ))}
+        </div>
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-28 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (identity?.administrator === true) {
+    return <AdminDailyTaskList />;
+  }
+
+  return <EmployeeTaskView />;
+};

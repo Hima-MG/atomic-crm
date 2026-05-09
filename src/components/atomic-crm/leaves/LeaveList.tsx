@@ -1,4 +1,10 @@
-import { useRecordContext } from "ra-core";
+import {
+  useGetIdentity,
+  useRecordContext,
+  useUpdate,
+  useNotify,
+  useRefresh,
+} from "ra-core";
 import { CreateButton } from "@/components/admin/create-button";
 import { DataTable } from "@/components/admin/data-table";
 import { ExportButton } from "@/components/admin/export-button";
@@ -10,9 +16,15 @@ import { ReferenceInput } from "@/components/admin/reference-input";
 import { AutocompleteInput } from "@/components/admin/autocomplete-input";
 import { ReferenceField } from "@/components/admin/reference-field";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Check, X } from "lucide-react";
 import { TopToolbar } from "../layout/TopToolbar";
 import { LEAVE_TYPE_CHOICES, LEAVE_STATUS_CHOICES } from "./LeaveInputs";
+import { EmployeeLeaveView } from "./EmployeeLeaveView";
 import type { Leave } from "../types";
+
+// ── Shared helpers ─────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
   pending:
@@ -59,6 +71,56 @@ const DurationField = (_props: { label?: string | boolean }) => {
   );
 };
 
+// ── Admin quick-approve/reject buttons ─────────────────────────────────────────
+
+const ApproveRejectButtons = (_props: { label?: string | boolean }) => {
+  const record = useRecordContext<Leave>();
+  const notify = useNotify();
+  const refresh = useRefresh();
+  const [update] = useUpdate();
+
+  if (!record || record.status !== "pending") return null;
+
+  const act = async (status: "approved" | "rejected") => {
+    try {
+      await update(
+        "leaves",
+        { id: record.id, data: { status }, previousData: record },
+        { returnPromise: true },
+      );
+      notify(status === "approved" ? "Leave approved" : "Leave rejected", {
+        type: status === "approved" ? "success" : "warning",
+      });
+      refresh();
+    } catch {
+      notify("Action failed", { type: "error" });
+    }
+  };
+
+  return (
+    <div className="flex gap-1">
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 px-2 text-green-700 border-green-300 hover:bg-green-50 dark:hover:bg-green-950"
+        onClick={() => act("approved")}
+      >
+        <Check className="h-3.5 w-3.5" />
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 px-2 text-red-700 border-red-300 hover:bg-red-50 dark:hover:bg-red-950"
+        onClick={() => act("rejected")}
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+};
+
+// ── Admin table ────────────────────────────────────────────────────────────────
+
 const filters = [
   <ReferenceInput source="employee_id" reference="employees" alwaysOn>
     <AutocompleteInput
@@ -89,7 +151,7 @@ const LeaveActions = () => (
   </TopToolbar>
 );
 
-export const LeaveList = () => (
+const AdminLeaveList = () => (
   <List
     filters={filters}
     actions={<LeaveActions />}
@@ -113,6 +175,9 @@ export const LeaveList = () => (
       <DataTable.Col label="Status">
         <StatusBadge />
       </DataTable.Col>
+      <DataTable.Col label="Approve">
+        <ApproveRejectButtons />
+      </DataTable.Col>
       <DataTable.Col label={false}>
         <div className="flex gap-1">
           <EditButton />
@@ -122,3 +187,30 @@ export const LeaveList = () => (
     </DataTable>
   </List>
 );
+
+// ── Role-aware entry point ─────────────────────────────────────────────────────
+
+export const LeaveList = () => {
+  const { identity, isPending } = useGetIdentity();
+
+  if (isPending) {
+    return (
+      <div className="max-w-lg mx-auto mt-6 space-y-3">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-4 gap-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-20 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  if (identity?.administrator === true) {
+    return <AdminLeaveList />;
+  }
+
+  return <EmployeeLeaveView />;
+};

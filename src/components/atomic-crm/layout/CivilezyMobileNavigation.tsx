@@ -74,6 +74,42 @@ const EmployeeMobileNav = () => {
   );
 };
 
+const CREMobileNav = () => {
+  const { pathname } = useLocation();
+  const at = (p: string) =>
+    p === "/" ? !!matchPath("/", pathname) : !!matchPath(`${p}/*`, pathname);
+
+  return (
+    <div className="flex justify-around w-full">
+      <NavBtn href="/" Icon={Home} label="Home" isActive={at("/")} />
+      <NavBtn
+        href="/students"
+        Icon={GraduationCap}
+        label="Leads"
+        isActive={at("/students")}
+      />
+      <NavBtn
+        href="/attendance"
+        Icon={CalendarCheck}
+        label="Attendance"
+        isActive={at("/attendance")}
+      />
+      <NavBtn
+        href="/leaves"
+        Icon={CalendarClock}
+        label="Leave"
+        isActive={at("/leaves")}
+      />
+      <NavBtn
+        href="/daily_tasks"
+        Icon={ClipboardList}
+        label="Tasks"
+        isActive={at("/daily_tasks")}
+      />
+    </div>
+  );
+};
+
 const AdminMobileNav = () => {
   const { pathname } = useLocation();
   const at = (p: string) =>
@@ -138,6 +174,8 @@ export const CivilezyMobileNavigation = () => {
       {!isPending &&
         (identity?.administrator === true ? (
           <AdminMobileNav />
+        ) : identity?.role === "cre" ? (
+          <CREMobileNav />
         ) : (
           <EmployeeMobileNav />
         ))}

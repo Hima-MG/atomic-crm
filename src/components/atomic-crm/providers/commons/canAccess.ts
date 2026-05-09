@@ -11,13 +11,15 @@ type CanAccessParams<
  * Role-based access control for Civilezy CRM.
  *
  * Roles:
- *   "admin"  — Santhosh, Dr. Anjana, Jasmine, Hima
- *              Full access to everything.
+ *   "admin"    — Santhosh, Dr. Anjana, Jasmine, Hima
+ *                Full access to everything: HR dashboard, EMS, CRM.
  *
- *   "user"   — All other employees
- *              Can only manage their own attendance, leave requests,
- *              and daily task submissions. Cannot access the CRM,
- *              other employees' sensitive data, or any admin tools.
+ *   "cre"      — CRM Executive
+ *                Employee workspace (attendance, leave, tasks) + Student CRM.
+ *                Cannot access HR admin tools or other employees' data.
+ *
+ *   "employee" — All other staff
+ *                Employee workspace only. Cannot access CRM or admin tools.
  */
 export const canAccess = <
   RecordType extends Record<string, any> = Record<string, any>,
@@ -30,10 +32,15 @@ export const canAccess = <
 
   const { resource, action } = params;
 
+  // ── Resources accessible to CRE only (not plain employees) ────────────────
+  if (resource === "students") {
+    // CREs can fully manage student leads
+    if (role === "cre") return true;
+    return false;
+  }
+
   // ── Completely blocked for non-admins ──────────────────────────────────────
-  // CRM (student leads) and legacy CRM resources — employee-facing only
   const adminOnly = [
-    "students",
     "contacts",
     "companies",
     "contact_notes",
@@ -64,7 +71,7 @@ export const canAccess = <
   }
 
   // ── Leaves — submit only, admin approves ──────────────────────────────────
-  // Employees can submit (create) and view history (list/show).
+  // Employees/CREs can submit (create) and view history (list/show).
   // Status changes (approve/reject) happen on edit — admin only.
   if (resource === "leaves") {
     return action === "list" || action === "show" || action === "create";

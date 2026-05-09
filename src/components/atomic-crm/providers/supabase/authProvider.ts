@@ -20,6 +20,7 @@ const getBaseAuthProvider = () =>
         fullName: `${sale.first_name} ${sale.last_name}`,
         avatar: sale.avatar?.src,
         administrator: sale.administrator ?? false,
+        role: sale.role ?? (sale.administrator ? "admin" : "employee"),
         email: sessionData?.session?.user?.email ?? sale.email ?? "",
       };
     },
@@ -73,7 +74,7 @@ const getSale = async () => {
 
   const { data: dataSale, error: errorSale } = await getSupabaseClient()
     .from("sales")
-    .select("id, first_name, last_name, avatar, administrator")
+    .select("id, first_name, last_name, avatar, administrator, role")
     .match({ user_id: dataSession?.session?.user.id })
     .single();
 
@@ -168,7 +169,8 @@ export const getAuthProvider = (): AuthProvider => {
       if (sale == null) return false;
 
       // Compute access rights from the sale role
-      const role = sale.administrator ? "admin" : "user";
+      const role: string =
+        sale.role ?? (sale.administrator ? "admin" : "employee");
       return canAccess(role, params);
     },
     getAuthorizationDetails(authorizationId: string) {

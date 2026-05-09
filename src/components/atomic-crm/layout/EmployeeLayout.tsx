@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Building2,
   FileText,
+  GraduationCap,
   User,
 } from "lucide-react";
 import { useGetIdentity, useTranslate, useUserMenu } from "ra-core";
@@ -19,7 +20,7 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useConfigurationLoader } from "../root/useConfigurationLoader";
 import { ChangelogPage } from "../misc/ChangelogPage";
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { label: "Dashboard", to: "/", match: "/" },
   {
     label: "Attendance",
@@ -36,9 +37,22 @@ const NAV_ITEMS = [
   },
 ];
 
+const CRE_EXTRA_ITEMS = [
+  {
+    label: "Student Leads",
+    to: "/students",
+    match: "/students/*",
+    icon: GraduationCap,
+  },
+];
+
 const EmployeeHeader = () => {
   const location = useLocation();
   const { identity } = useGetIdentity();
+  const isCRE = identity?.role === "cre";
+  const navItems = isCRE
+    ? [...BASE_NAV_ITEMS, ...CRE_EXTRA_ITEMS]
+    : BASE_NAV_ITEMS;
 
   return (
     <header className="bg-secondary border-b">
@@ -55,7 +69,7 @@ const EmployeeHeader = () => {
 
           {/* Nav tabs */}
           <nav className="flex">
-            {NAV_ITEMS.map(({ label, to, match, icon: Icon }) => {
+            {navItems.map(({ label, to, match, icon: Icon }) => {
               const isActive =
                 match === "/"
                   ? !!matchPath("/", location.pathname)

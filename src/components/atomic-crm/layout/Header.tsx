@@ -12,12 +12,7 @@ import {
   ChevronDown,
   Building2,
 } from "lucide-react";
-import {
-  CanAccess,
-  useGetIdentity,
-  useTranslate,
-  useUserMenu,
-} from "ra-core";
+import { CanAccess, useGetIdentity, useTranslate, useUserMenu } from "ra-core";
 import { Link, matchPath, useLocation } from "react-router";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { ThemeModeToggle } from "@/components/admin/theme-mode-toggle";
@@ -40,6 +35,7 @@ const Header = () => {
   const translate = useTranslate();
   const { identity } = useGetIdentity();
   const isAdmin = identity?.administrator === true;
+  const isCRE = !isAdmin && identity?.role === "cre";
 
   let currentPath: string | boolean = "/";
   if (matchPath("/", location.pathname)) {
@@ -93,6 +89,34 @@ const Header = () => {
                       />
                     </CanAccess>
                     <HRAdminDropdown isActive={currentPath === "/hr"} />
+                  </>
+                ) : isCRE ? (
+                  // CRE nav — employee workspace + student leads
+                  <>
+                    <NavigationTab
+                      label="Student Leads"
+                      to="/students"
+                      isActive={currentPath === "/students"}
+                      icon={<GraduationCap className="h-4 w-4" />}
+                    />
+                    <NavigationTab
+                      label="Attendance"
+                      to="/attendance"
+                      isActive={currentPath === "attendance"}
+                      icon={<CalendarCheck className="h-4 w-4" />}
+                    />
+                    <NavigationTab
+                      label="Leave"
+                      to="/leaves"
+                      isActive={currentPath === "leaves"}
+                      icon={<CalendarClock className="h-4 w-4" />}
+                    />
+                    <NavigationTab
+                      label="Daily Tasks"
+                      to="/daily_tasks"
+                      isActive={currentPath === "daily_tasks"}
+                      icon={<ClipboardList className="h-4 w-4" />}
+                    />
                   </>
                 ) : (
                   // Employee nav — flat tabs, no dropdown

@@ -34,6 +34,7 @@ import {
 import ImageEditorField from "../misc/ImageEditorField";
 import type { CrmDataProvider } from "../providers/types";
 import type { Sale, SalesFormData } from "../types";
+import { EmployeeProfileSection } from "./EmployeeProfileSection";
 
 export const ProfilePage = () => {
   const [isEditMode, setEditMode] = useState(false);
@@ -83,11 +84,14 @@ export const ProfilePage = () => {
     mutate(values);
   };
 
+  const isEmployee = identity?.administrator !== true;
+
   return (
-    <div className="max-w-lg mx-auto mt-8">
+    <div className="max-w-lg mx-auto mt-8 space-y-4">
       <Form onSubmit={handleOnSubmit} record={data}>
         <ProfileForm isEditMode={isEditMode} setEditMode={setEditMode} />
       </Form>
+      {isEmployee && <EmployeeProfileSection />}
     </div>
   );
 };

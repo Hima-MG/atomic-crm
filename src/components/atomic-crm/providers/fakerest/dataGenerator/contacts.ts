@@ -7,13 +7,15 @@ import {
   random,
 } from "faker/locale/en_US";
 
-import { defaultNoteStatuses } from "../../../root/defaultConfiguration";
-import { contactGender } from "../../../contacts/contactModel";
-import type { Company, Contact } from "../../../types";
 import type { Db } from "./types";
 import { randomDate, weightedBoolean } from "./utils";
+import { defaultNoteStatuses } from "../../../root/defaultConfiguration";
+import type { Company, Contact } from "../../../types";
 
-const maxContacts = {
+// Inline replacement for the deleted contactModel — fakerest / demo use only
+const contactGender = [{ value: "male" }, { value: "female" }];
+
+const maxContacts: Record<number, number> = {
   1: 1,
   10: 4,
   50: 12,
@@ -52,18 +54,13 @@ export const generateContacts = (db: Db, size = 500): Required<Contact>[] => {
     ];
     const avatar = {
       src: has_avatar
-        ? "https://marmelab.com/posters/avatar-" +
-          (223 - numberOfContacts) +
-          ".jpeg"
+        ? `https://marmelab.com/posters/avatar-${223 - numberOfContacts}.jpeg`
         : undefined,
     };
     const title = fakerCompany.bsAdjective();
 
-    if (has_avatar) {
-      numberOfContacts++;
-    }
+    if (has_avatar) numberOfContacts++;
 
-    // choose company with people left to know
     let company: Company;
     do {
       company = random.arrayElement(db.companies);
@@ -71,7 +68,6 @@ export const generateContacts = (db: Db, size = 500): Required<Contact>[] => {
     company.nb_contacts = (company.nb_contacts ?? 0) + 1;
 
     const first_seen = randomDate(new Date(company.created_at)).toISOString();
-    const last_seen = first_seen;
 
     return {
       id,
@@ -86,13 +82,13 @@ export const generateContacts = (db: Db, size = 500): Required<Contact>[] => {
       background: lorem.sentence(),
       acquisition: random.arrayElement(["inbound", "outbound"]),
       avatar,
-      first_seen: first_seen,
-      last_seen: last_seen,
+      first_seen,
+      last_seen: first_seen,
       has_newsletter: weightedBoolean(30),
       status: random.arrayElement(defaultNoteStatuses).value,
       tags: random
         .arrayElements(db.tags, random.arrayElement([0, 0, 0, 1, 1, 2]))
-        .map((tag) => tag.id), // finalize
+        .map((tag) => tag.id),
       sales_id: company.sales_id!,
       nb_tasks: 0,
       linkedin_url: null,

@@ -1,7 +1,9 @@
-import { useGetList } from "ra-core";
+import { useGetList, useUpdate, useNotify, useRefresh } from "ra-core";
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   UserCheck,
@@ -11,7 +13,10 @@ import {
   GraduationCap,
   TrendingUp,
   CalendarClock,
+  Check,
+  X,
 } from "lucide-react";
+import type { Leave } from "../types";
 
 // Fixed date computed once at module level — not recalculated on each render
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -58,9 +63,7 @@ const StatCard = ({
         ) : (
           <p className="text-3xl font-bold">{value}</p>
         )}
-        {sub && (
-          <p className="text-xs text-muted-foreground mt-1">{sub}</p>
-        )}
+        {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
       </CardContent>
     </Card>
   );
@@ -154,7 +157,9 @@ export const HRDashboard = () => {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">HR Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Overview for {todayLabel}</p>
+        <p className="text-sm text-muted-foreground">
+          Overview for {todayLabel}
+        </p>
       </div>
 
       {/* ── Workforce ──────────────────────────────────────────────────── */}
@@ -262,6 +267,10 @@ export const HRDashboard = () => {
         />
       </div>
 
+      {/* ── Pending Leave Approvals ────────────────────────────────────── */}
+      <SectionHeader title="Pending Leave Requests" />
+      <PendingLeaveApprovals />
+
       {/* ── Quick Links ────────────────────────────────────────────────── */}
       <SectionHeader title="Quick Links" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -275,6 +284,130 @@ export const HRDashboard = () => {
           </Link>
         ))}
       </div>
+    </div>
+  );
+};
+
+// ── Pending leave approval panel ──────────────────────────────────────────────
+
+const LEAVE_TYPE_LABELS: Record<string, string> = {
+  annual: "Annual",
+  sick: "Sick",
+  casual: "Casual",
+  other: "Other",
+};
+
+const PendingLeaveApprovals = () => {
+  const notify = useNotify();
+  const refresh = useRefresh();
+  const [update] = useUpdate();
+
+  const { data: pendingLeaves, isPending } = useGetList<Leave>(
+    "leaves",
+    {
+      filter: { status: "pending" },
+      pagination: { page: 1, perPage: 10 },
+      sort: { field: "created_at", order: "ASC" },
+    },
+    { staleTime: 0 },
+  );
+
+  const act = async (record: Leave, status: "approved" | "rejected") => {
+    try {
+      await update(
+        "leaves",
+        { id: record.id, data: { status }, previousData: record },
+        { returnPromise: true },
+      );
+      notify(status === "approved" ? "Leave approved" : "Leave rejected", {
+        type: status === "approved" ? "success" : "warning",
+      });
+      refresh();
+    } catch {
+      notify("Action failed", { type: "error" });
+    }
+  };
+
+  if (isPending) {
+    return (
+      <div className="space-y-2">
+        {[1, 2].map((i) => (
+          <Skeleton key={i} className="h-14 w-full rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!pendingLeaves?.length) {
+    return (
+      <p className="text-sm text-muted-foreground py-2">
+        No pending leave requests.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {pendingLeaves.map((leave) => {
+        const days =
+          Math.ceil(
+            (new Date(leave.end_date).getTime() -
+              new Date(leave.start_date).getTime()) /
+              86400000,
+          ) + 1;
+        return (
+          <Card key={leave.id}>
+            <CardContent className="py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <Badge variant="outline" className="shrink-0 text-xs">
+                  {LEAVE_TYPE_LABELS[leave.leave_type] ?? leave.leave_type}
+                </Badge>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {leave.start_date} → {leave.end_date}
+                    <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                      ({days}d)
+                    </span>
+                  </p>
+                  {leave.reason && (
+                    <p className="text-xs text-muted-foreground truncate max-w-xs">
+                      {leave.reason}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-1.5 shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-green-700 border-green-300 hover:bg-green-50 dark:hover:bg-green-950"
+                  onClick={() => act(leave, "approved")}
+                >
+                  <Check className="h-3.5 w-3.5 mr-1" />
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-red-700 border-red-300 hover:bg-red-50 dark:hover:bg-red-950"
+                  onClick={() => act(leave, "rejected")}
+                >
+                  <X className="h-3.5 w-3.5 mr-1" />
+                  Reject
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+      {(pendingLeaves?.length ?? 0) >= 10 && (
+        <Link
+          to="/leaves?filter=%7B%22status%22%3A%22pending%22%7D"
+          className="block text-center text-xs text-blue-600 hover:underline pt-1"
+        >
+          View all pending leaves →
+        </Link>
+      )}
     </div>
   );
 };

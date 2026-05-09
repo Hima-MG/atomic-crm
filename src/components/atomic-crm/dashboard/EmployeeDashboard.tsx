@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGetIdentity, useGetList, useRedirect } from "ra-core";
 import {
   CalendarCheck,
@@ -8,6 +9,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PunchCard } from "./PunchCard";
+import { QuickLeaveDialog } from "./QuickLeaveDialog";
 import type { Employee, Leave, DailyTask } from "../types";
 
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -29,7 +31,7 @@ const QuickAction = ({
     onClick={onClick}
     className="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors text-left w-full"
   >
-    <div className={`p-2 rounded-md ${color}`}>
+    <div className={`p-2 rounded-md ${color} shrink-0`}>
       <Icon className="h-4 w-4 text-white" />
     </div>
     <div>
@@ -62,6 +64,7 @@ const StatCard = ({
 export const EmployeeDashboard = () => {
   const { identity } = useGetIdentity();
   const redirect = useRedirect();
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
 
   const { data: employees } = useGetList<Employee>(
     "employees",
@@ -75,7 +78,7 @@ export const EmployeeDashboard = () => {
 
   const employee = employees?.[0];
 
-  const { data: pendingLeaves, total: pendingLeavesTotal } = useGetList<Leave>(
+  const { total: pendingLeavesTotal } = useGetList<Leave>(
     "leaves",
     {
       filter: employee?.id
@@ -85,7 +88,6 @@ export const EmployeeDashboard = () => {
     },
     { enabled: !!employee?.id },
   );
-  void pendingLeaves;
 
   const { data: todayTasks, total: todayTasksTotal } = useGetList<DailyTask>(
     "daily_tasks",
@@ -154,7 +156,7 @@ export const EmployeeDashboard = () => {
             label="Apply for Leave"
             description="Submit a leave request"
             color="bg-orange-500"
-            onClick={() => redirect("/leaves/create")}
+            onClick={() => setLeaveDialogOpen(true)}
           />
           <QuickAction
             icon={ClipboardList}
@@ -221,6 +223,12 @@ export const EmployeeDashboard = () => {
           </div>
         </div>
       )}
+
+      <QuickLeaveDialog
+        open={leaveDialogOpen}
+        onOpenChange={setLeaveDialogOpen}
+        employeeId={employee?.id}
+      />
     </div>
   );
 };

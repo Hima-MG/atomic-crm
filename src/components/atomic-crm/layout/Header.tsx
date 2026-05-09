@@ -4,12 +4,9 @@ import {
   User,
   Users,
   GraduationCap,
-  UserCog,
   CalendarCheck,
   CalendarClock,
   ClipboardList,
-  LayoutDashboard,
-  ChevronDown,
   Building2,
 } from "lucide-react";
 import { CanAccess, useGetIdentity, useTranslate, useUserMenu } from "ra-core";
@@ -17,14 +14,7 @@ import { Link, matchPath, useLocation } from "react-router";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { ThemeModeToggle } from "@/components/admin/theme-mode-toggle";
 import { UserMenu } from "@/components/admin/user-menu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 import { useConfigurationContext } from "../root/ConfigurationContext";
 import { ChangelogPage } from "../misc/ChangelogPage";
@@ -42,14 +32,12 @@ const Header = () => {
     currentPath = "/";
   } else if (matchPath("/students/*", location.pathname)) {
     currentPath = "/students";
-  } else if (
-    matchPath("/employees/*", location.pathname) ||
-    matchPath("/attendance/*", location.pathname) ||
-    matchPath("/leaves/*", location.pathname) ||
-    matchPath("/daily_tasks/*", location.pathname) ||
-    matchPath("/hr-dashboard", location.pathname)
-  ) {
-    currentPath = isAdmin ? "/hr" : location.pathname.split("/")[1];
+  } else if (matchPath("/attendance/*", location.pathname)) {
+    currentPath = "attendance";
+  } else if (matchPath("/leaves/*", location.pathname)) {
+    currentPath = "leaves";
+  } else if (matchPath("/daily_tasks/*", location.pathname)) {
+    currentPath = "daily_tasks";
   } else {
     currentPath = false;
   }
@@ -78,7 +66,7 @@ const Header = () => {
                 />
 
                 {isAdmin ? (
-                  // Admin nav
+                  // Admin nav — Student Leads only; HR/EMS accessed via dashboard
                   <>
                     <CanAccess resource="students" action="list">
                       <NavigationTab
@@ -88,7 +76,6 @@ const Header = () => {
                         icon={<GraduationCap className="h-4 w-4" />}
                       />
                     </CanAccess>
-                    <HRAdminDropdown isActive={currentPath === "/hr"} />
                   </>
                 ) : isCRE ? (
                   // CRE nav — employee workspace + student leads
@@ -188,51 +175,6 @@ const NavigationTab = ({
     {icon}
     {label}
   </Link>
-);
-
-const HR_ADMIN_ITEMS = [
-  { label: "Employees", to: "/employees", icon: UserCog },
-  { label: "Attendance", to: "/attendance", icon: CalendarCheck },
-  { label: "Leave Requests", to: "/leaves", icon: CalendarClock },
-  { label: "Daily Tasks", to: "/daily_tasks", icon: ClipboardList },
-];
-
-const HRAdminDropdown = ({ isActive }: { isActive: boolean }) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger
-      className={`flex items-center gap-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 outline-none ${
-        isActive
-          ? "text-secondary-foreground border-blue-600"
-          : "text-secondary-foreground/70 border-transparent hover:text-secondary-foreground/80"
-      }`}
-    >
-      HR &amp; EMS
-      <ChevronDown className="h-3.5 w-3.5" />
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" className="w-52">
-      <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
-        Overview
-      </DropdownMenuLabel>
-      <DropdownMenuItem asChild>
-        <Link to="/hr-dashboard" className="flex items-center gap-2">
-          <LayoutDashboard className="h-4 w-4" />
-          HR Dashboard
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuSeparator />
-      <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
-        Management
-      </DropdownMenuLabel>
-      {HR_ADMIN_ITEMS.map(({ label, to, icon: Icon }) => (
-        <DropdownMenuItem key={to} asChild>
-          <Link to={to} className="flex items-center gap-2">
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        </DropdownMenuItem>
-      ))}
-    </DropdownMenuContent>
-  </DropdownMenu>
 );
 
 const UsersMenu = () => {
